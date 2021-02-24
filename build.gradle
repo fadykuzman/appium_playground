@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+}
+
+group 'me.learning'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    implementation group: 'io.appium', name: 'java-client', version: '7.4.1'
+    implementation group: 'io.cucumber', name: 'cucumber-java', version: '6.10.0'
+    implementation group: 'io.cucumber', name: 'cucumber-core', version: '6.10.0'
+    testImplementation group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task runAllTests(type: Test, dependsOn: ['clean', 'build', 'assemble', 'testClasses']) {
+    doLast {
+        String tags = getTags()
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ["--plugin", "pretty",
+            "json:${reporting.baseDir}/cucumber/cucumber.json",
+            "--glue", "gradle.cucumber", "-t", tags,
+            "${project.projectDir}/src/test/resources/features"]
+        }
+    }
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testRuntime
+    }
+}
+
+private String getTags() {
+    def tags = System.getProperty("tags")
+    if (tags != null)
+        return tags
+    return "~wip"
+}
